@@ -24,7 +24,7 @@ class GoogleSearchTest(BaseCase):
         self.assert_element("//*[@id='APjFqb']")
 
         # type the search_query into the search box
-        search_query = 'korean food'
+        search_query = 'dinosaur chicken nuggets'
         self.type("//*[@id='APjFqb']", search_query + Keys.RETURN)
 
         # obtain all links
@@ -32,12 +32,14 @@ class GoogleSearchTest(BaseCase):
         print(results)
 
         # put results in a file
-        file = open(r"C:\Users\Kevin\Desktop\CGroup\results\results.txt", "a")
+        file_path = r"C:\Users\Kevin\Desktop\CGroup\results\results.txt"
         now = datetime.now()
         date = now.strftime("%m/%d/%Y;%H:%M:%S")
-        file.write(search_query + ";" + date + "\n")
-
-        file.close()
+        with open(file_path, "a", encoding="utf-8") as file:
+            file.write(search_query + ";" + date + "\n")
+            for result in results:
+                file.write(str(result) + "\n")
+            file.write("\n")
 
         # pause for 3s
         self.sleep(3)

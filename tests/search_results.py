@@ -3,7 +3,8 @@ from bs4 import BeautifulSoup
 
 def get_results(page_source):
     soup = BeautifulSoup(page_source, "html.parser")
-    search = soup.find_all("div", jsname="UWckNb")
+    search = soup.find_all("a", jsname="UWckNb", href=True)
     results = []
-    for link in search:
-        results.append(link.a.get("href"))
+    for tag in search:
+        results.append(tag["href"])
+    return results
