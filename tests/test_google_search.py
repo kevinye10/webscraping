@@ -34,8 +34,8 @@ class GoogleSearchTest(BaseCase):
         # put results in a file
         file = open(r"C:\Users\Kevin\Desktop\CGroup\results\results.txt", "a")
         now = datetime.now()
-        date = now.strftime(" %m/%d/%Y, %H:%M:%S")
-        file.write(search_query + date + "\n")
+        date = now.strftime("%m/%d/%Y;%H:%M:%S")
+        file.write(search_query + ";" + date + "\n")
 
         file.close()
 
