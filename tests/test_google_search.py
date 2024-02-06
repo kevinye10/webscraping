@@ -19,7 +19,7 @@ class GoogleSearchTest(BaseCase):
         results_file_path = r"/Users/kye10/School/pythonProjects/results/results.txt"
         now = datetime.now()
         date = now.strftime("%m/%d/%Y;%H:%M:%S")
-        search_query = "how to get a good score on the mcat"
+        search_query = "dinosaur chicken nuggets"
         link_explore_depth = 1
 
         try:
@@ -49,8 +49,8 @@ class GoogleSearchTest(BaseCase):
                 file.write(search_query + ";" + date + "\n")
                 for link in links:
                     file.write(str(link) + "\n")
-                for css in results["css"]:
-                    file.write(css + "\n")
+                '''for css in results["css"]:
+                    file.write(css + "\n")'''
                 file.write("\n")
 
             # write to log that search was successful
@@ -60,7 +60,7 @@ class GoogleSearchTest(BaseCase):
             # scroll to last link and back up (50% of the time)
             if random.randint(0,1):
                 self.slow_scroll_to(results["css"][-1])
-                self.sleep(2)
+                self.sleep(random.random()) # wait between 0.0 and 1.0 seconds
                 # since there is no self.slow_scroll_to_top(), we are going to slow scroll back to the first link
                 self.slow_scroll_to(results["css"][0])
 
@@ -68,6 +68,8 @@ class GoogleSearchTest(BaseCase):
             css_to_click = results["css"][2]
             self.slow_scroll_to(css_to_click)
             self.slow_click(css_to_click)
+            with open(log_file_path, "a", encoding="utf-8") as file:
+                file.write("Opened link " + css_to_click + "\n\n")
 
         # no results found error
         except ValueError:
