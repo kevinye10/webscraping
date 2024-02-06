@@ -2,6 +2,7 @@ from seleniumbase import BaseCase
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime
 from .search_results import get_results
+import random
 
 
 class GoogleSearchTest(BaseCase):
@@ -16,9 +17,10 @@ class GoogleSearchTest(BaseCase):
     def test_google_search(self):
         log_file_path = r"/Users/kye10/School/pythonProjects/results/log.txt"
         results_file_path = r"/Users/kye10/School/pythonProjects/results/results.txt"
-        search_query = "knfbgljkshoimweurhmcoimsdjrglkjdfhmgcorwiejkrchgmclsdkjflhgmc"
         now = datetime.now()
         date = now.strftime("%m/%d/%Y;%H:%M:%S")
+        search_query = "how to get a good score on the mcat"
+        link_explore_depth = 1
 
         try:
             self.maximize_window()
@@ -32,21 +34,40 @@ class GoogleSearchTest(BaseCase):
             # type the search_query into the search box
             self.type("//*[@id='APjFqb']", search_query + Keys.RETURN)
 
-            # obtain all links
+            # obtain all links and css selectors to the links
+            # returns a dictionary where {"href": links[], "css": css selectors[]}
             results = get_results(self.get_page_source())
 
-            if len(results) == 0:
+            # were there any results?
+            if len(results["href"]) == 0:
                 raise ValueError("No results found")
-            # put results in a file
+
+            # put hrefs in a file
+            links = results["href"]
+
             with open(results_file_path, "a", encoding="utf-8") as file:
                 file.write(search_query + ";" + date + "\n")
-                for result in results:
-                    file.write(str(result) + "\n")
+                for link in links:
+                    file.write(str(link) + "\n")
+                for css in results["css"]:
+                    file.write(css + "\n")
                 file.write("\n")
 
             # write to log that search was successful
             with open(log_file_path, "a", encoding="utf-8") as file:
                 file.write(date + "\n" "Successfully found results for '" + search_query + "'\n")
+
+            # scroll to last link and back up (50% of the time)
+            if random.randint(0,1):
+                self.slow_scroll_to(results["css"][-1])
+                self.sleep(2)
+                # since there is no self.slow_scroll_to_top(), we are going to slow scroll back to the first link
+                self.slow_scroll_to(results["css"][0])
+
+            # randomly click on one of the first 3 links
+            css_to_click = results["css"][2]
+            self.slow_scroll_to(css_to_click)
+            self.slow_click(css_to_click)
 
         # no results found error
         except ValueError:
@@ -70,3 +91,9 @@ class GoogleSearchTest(BaseCase):
         self.sleep(3)
 
         # driver is automatically quit by SeleniumBase
+
+    # helper function(s)
+
+    # scrolls and interacts with hrefs or buttons on a page
+    def explore_page(self):
+        return
