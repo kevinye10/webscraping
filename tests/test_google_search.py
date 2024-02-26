@@ -19,7 +19,7 @@ class GoogleSearchTest(BaseCase):
         results_file_path = r"/Users/kye10/School/pythonProjects/results/results.txt"
         now = datetime.now()
         date = now.strftime("%m/%d/%Y;%H:%M:%S")
-        search_query = "dinosaur chicken nuggets"
+        search_query = "cnn"
         link_explore_depth = 1
 
         try:
@@ -60,16 +60,19 @@ class GoogleSearchTest(BaseCase):
             # scroll to last link and back up (50% of the time)
             if random.randint(0,1):
                 self.slow_scroll_to(results["css"][-1])
-                self.sleep(random.random()) # wait between 0.0 and 1.0 seconds
+                self.sleep(random.randint(1,200) / 100) # wait between 0.00 and 2.00 seconds
                 # since there is no self.slow_scroll_to_top(), we are going to slow scroll back to the first link
                 self.slow_scroll_to(results["css"][0])
 
             # randomly click on one of the first 3 links
-            css_to_click = results["css"][2]
+            css_to_click = results["css"][0]
             self.slow_scroll_to(css_to_click)
             self.slow_click(css_to_click)
             with open(log_file_path, "a", encoding="utf-8") as file:
                 file.write("Opened link " + css_to_click + "\n\n")
+
+            # explore the link
+            self.explore_page()
 
         # no results found error
         except ValueError:
@@ -98,4 +101,21 @@ class GoogleSearchTest(BaseCase):
 
     # scrolls and interacts with hrefs or buttons on a page
     def explore_page(self):
-        return
+        log_file_path = r"/Users/kye10/School/pythonProjects/results/log.txt"
+        number_links_to_find = 10
+
+        clicked_on = random.randint(0,number_links_to_find - 1) # to click on 1 of the 10 links
+        css_to_click = "" # in format a[href="link"]
+        # find 10 visible links
+        links = self.find_visible_elements("a[href]", limit=10)
+        # write the visible links into a file
+        with open(log_file_path, "a", encoding="utf-8") as file:
+            file.write("searching " + self.get_current_url() + " for " + str(number_links_to_find) + " links:\n")
+            for link in links:
+                if clicked_on == 0:
+                    css_to_click = 'a[href="' + link.get_attribute("href") + '"]'
+                clicked_on -= 1
+                file.write(link.get_attribute("href") + "\n")
+            file.write("clicking on " + css_to_click + "\n")
+        self.slow_click(css_to_click)
+
