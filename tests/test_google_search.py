@@ -1,7 +1,7 @@
 from seleniumbase import BaseCase
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime
-from .search_results import get_results
+from tests.search_results import get_results
 import random
 
 
@@ -15,12 +15,12 @@ class GoogleSearchTest(BaseCase):
                             user_data_dir=r"/Users/kye10/Library/Application Support/Google/Chrome/User Data")
 
     def test_google_search(self):
-        log_file_path = r"/Users/kye10/School/pythonProjects/results/log.txt"
-        results_file_path = r"/Users/kye10/School/pythonProjects/results/results.txt"
+        log_file_path = r"/Users/kye10/School/web_search/results/log.txt"
+        results_file_path = r"/Users/kye10/School/web_search/results/results.txt"
         now = datetime.now()
         date = now.strftime("%m/%d/%Y;%H:%M:%S")
         search_query = "cnn"
-        link_explore_depth = 1
+        link_explore_depth = 2
 
         try:
             self.maximize_window()
@@ -60,7 +60,7 @@ class GoogleSearchTest(BaseCase):
             # scroll to last link and back up (50% of the time)
             if random.randint(0,1):
                 self.slow_scroll_to(results["css"][-1])
-                self.sleep(random.randint(1,200) / 100) # wait between 0.00 and 2.00 seconds
+                self.sleep(random.randint(1,200) / 100)  # wait between 0.00 and 2.00 seconds
                 # since there is no self.slow_scroll_to_top(), we are going to slow scroll back to the first link
                 self.slow_scroll_to(results["css"][0])
 
@@ -69,10 +69,11 @@ class GoogleSearchTest(BaseCase):
             self.slow_scroll_to(css_to_click)
             self.slow_click(css_to_click)
             with open(log_file_path, "a", encoding="utf-8") as file:
-                file.write("Opened link " + css_to_click + "\n\n")
+                file.write("Opened link " + css_to_click + "\n")
 
             # explore the link
-            self.explore_page()
+            for i in range(0, link_explore_depth):
+                self.explore_page()
 
         # no results found error
         except ValueError:
@@ -81,7 +82,7 @@ class GoogleSearchTest(BaseCase):
 
             with open(results_file_path, "a", encoding="utf-8") as file:
                 file.write(search_query + ";" + date + "\n")
-                file.write("The search for '" + search_query + "' resulted in an error. Please check log.txt")
+                file.write("The search for '" + search_query + "' resulted in an error. Please check log.txt\n")
 
         # any other error
         except Exception as e:
@@ -90,7 +91,7 @@ class GoogleSearchTest(BaseCase):
 
             with open(results_file_path, "a", encoding="utf-8") as file:
                 file.write(search_query + ";" + date + "\n")
-                file.write("The search for '" + search_query + "' resulted in an error. Please check log.txt")
+                file.write("The search for '" + search_query + "' resulted in an error. Please check log.txt\n")
 
         # pause for 3s
         self.sleep(3)
@@ -101,21 +102,25 @@ class GoogleSearchTest(BaseCase):
 
     # scrolls and interacts with hrefs or buttons on a page
     def explore_page(self):
-        log_file_path = r"/Users/kye10/School/pythonProjects/results/log.txt"
+        log_file_path = r"/Users/kye10/School/web_search/results/log.txt"
         number_links_to_find = 10
-
-        clicked_on = random.randint(0,number_links_to_find - 1) # to click on 1 of the 10 links
-        css_to_click = "" # in format a[href="link"]
+        current_url = self.get_current_url()
         # find 10 visible links
         links = self.find_visible_elements("a[href]", limit=10)
+        clicked_on = random.randint(0, len(links) - 1)  # to click on 1 of the links we found
+        # define css selector to click
+        css_to_click = 'a[href="' + links[clicked_on].get_attribute("href") + '"]'  # in format a[href="link"]
         # write the visible links into a file
         with open(log_file_path, "a", encoding="utf-8") as file:
             file.write("searching " + self.get_current_url() + " for " + str(number_links_to_find) + " links:\n")
             for link in links:
-                if clicked_on == 0:
-                    css_to_click = 'a[href="' + link.get_attribute("href") + '"]'
-                clicked_on -= 1
                 file.write(link.get_attribute("href") + "\n")
-            file.write("clicking on " + css_to_click + "\n")
-        self.slow_click(css_to_click)
-
+            while self.get_current_url() == current_url:  # while we have not clicked on a url, try to click on one
+                try:
+                    file.write("Clicking on: " + css_to_click + "\n")
+                    self.slow_click(css_to_click)
+                except Exception as e:  # if clicking on the URL fails (most likely that element isn't visible)
+                    file.write("Exception: " + str(e) + "occurred while clicking" + css_to_click + "\n")
+                    # increment to click on the next link
+                    clicked_on += 1
+                    css_to_click = 'a[href="' + links[clicked_on].get_attribute("href") + '"]'
