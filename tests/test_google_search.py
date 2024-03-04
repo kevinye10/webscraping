@@ -1,11 +1,14 @@
 from seleniumbase import BaseCase
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime
-from tests.search_results import get_results
+from tests.search_results import get_results, explore_page
 import random
 
 
 class GoogleSearchTest(BaseCase):
+    """ Global Variables """
+    log_file_path = r"/Users/kye10/School/web_search/results/log.txt"
+    results_file_path = r"/Users/kye10/School/web_search/results/results.txt"
 
     def setUp(self, masterqa_mode=False):
         super().setUp()
@@ -15,8 +18,6 @@ class GoogleSearchTest(BaseCase):
                             user_data_dir=r"/Users/kye10/Library/Application Support/Google/Chrome/User Data")
 
     def test_google_search(self):
-        log_file_path = r"/Users/kye10/School/web_search/results/log.txt"
-        results_file_path = r"/Users/kye10/School/web_search/results/results.txt"
         now = datetime.now()
         date = now.strftime("%m/%d/%Y;%H:%M:%S")
         search_query = "cnn"
@@ -45,16 +46,16 @@ class GoogleSearchTest(BaseCase):
             # put hrefs in a file
             links = results["href"]
 
-            with open(results_file_path, "a", encoding="utf-8") as file:
+            with open(self.results_file_path, "a", encoding="utf-8") as file:
                 file.write(search_query + ";" + date + "\n")
                 for link in links:
                     file.write(str(link) + "\n")
-                '''for css in results["css"]:
-                    file.write(css + "\n")'''
+                for css in results["css"]:
+                    file.write(css + "\n")
                 file.write("\n")
 
             # write to log that search was successful
-            with open(log_file_path, "a", encoding="utf-8") as file:
+            with open(self.log_file_path, "a", encoding="utf-8") as file:
                 file.write(date + "\n" "Successfully found results for '" + search_query + "'\n")
 
             # scroll to last link and back up (50% of the time)
@@ -68,28 +69,30 @@ class GoogleSearchTest(BaseCase):
             css_to_click = results["css"][0]
             self.slow_scroll_to(css_to_click)
             self.slow_click(css_to_click)
-            with open(log_file_path, "a", encoding="utf-8") as file:
+            with open(self.log_file_path, "a", encoding="utf-8") as file:
                 file.write("Opened link " + css_to_click + "\n")
 
             # explore the link
             for i in range(0, link_explore_depth):
-                self.explore_page()
+                with open(self.log_file_path, "a", encoding="utf-8") as file:
+                    file.write("try " + str(i) + '\n')
+                explore_page(self, self.log_file_path)
 
         # no results found error
         except ValueError:
-            with open(log_file_path, "a", encoding="utf-8") as file:
+            with open(self.log_file_path, "a", encoding="utf-8") as file:
                 file.write(date + "\n" + "Unable to find any results while searching for '" + search_query + "'\n")
 
-            with open(results_file_path, "a", encoding="utf-8") as file:
+            with open(self.results_file_path, "a", encoding="utf-8") as file:
                 file.write(search_query + ";" + date + "\n")
                 file.write("The search for '" + search_query + "' resulted in an error. Please check log.txt\n")
 
         # any other error
         except Exception as e:
-            with open(log_file_path, "a", encoding="utf-8") as file:
+            with open(self.log_file_path, "a", encoding="utf-8") as file:
                 file.write(date + "\n" + str(e) + " occurred while searching for '" + search_query + "'\n")
 
-            with open(results_file_path, "a", encoding="utf-8") as file:
+            with open(self.results_file_path, "a", encoding="utf-8") as file:
                 file.write(search_query + ";" + date + "\n")
                 file.write("The search for '" + search_query + "' resulted in an error. Please check log.txt\n")
 
@@ -97,30 +100,3 @@ class GoogleSearchTest(BaseCase):
         self.sleep(3)
 
         # driver is automatically quit by SeleniumBase
-
-    # helper function(s)
-
-    # scrolls and interacts with hrefs or buttons on a page
-    def explore_page(self):
-        log_file_path = r"/Users/kye10/School/web_search/results/log.txt"
-        number_links_to_find = 10
-        current_url = self.get_current_url()
-        # find 10 visible links
-        links = self.find_visible_elements("a[href]", limit=10)
-        clicked_on = random.randint(0, len(links) - 1)  # to click on 1 of the links we found
-        # define css selector to click
-        css_to_click = 'a[href="' + links[clicked_on].get_attribute("href") + '"]'  # in format a[href="link"]
-        # write the visible links into a file
-        with open(log_file_path, "a", encoding="utf-8") as file:
-            file.write("searching " + self.get_current_url() + " for " + str(number_links_to_find) + " links:\n")
-            for link in links:
-                file.write(link.get_attribute("href") + "\n")
-            while self.get_current_url() == current_url:  # while we have not clicked on a url, try to click on one
-                try:
-                    file.write("Clicking on: " + css_to_click + "\n")
-                    self.slow_click(css_to_click)
-                except Exception as e:  # if clicking on the URL fails (most likely that element isn't visible)
-                    file.write("Exception: " + str(e) + "occurred while clicking" + css_to_click + "\n")
-                    # increment to click on the next link
-                    clicked_on += 1
-                    css_to_click = 'a[href="' + links[clicked_on].get_attribute("href") + '"]'

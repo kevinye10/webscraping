@@ -1,4 +1,7 @@
 from bs4 import BeautifulSoup
+import random
+
+number_links_to_find = 10   # for explore_page
 
 
 def get_results(page_source):
@@ -18,9 +21,43 @@ def get_results(page_source):
             if svg_tag is not None:
                 results.append(tag["href"])'''
     h3_selector = ' h3.LC20lb.MBeuO.DKV0Md'
-    for i in range(5):  # obtain the css selectors of the first 5 links
-        # in format: 'a[href="link"] h3.LC20lb.MBeuO.DKV0Md'
-        a_selector = 'a[href="' + results["href"][i] + '"]'
-        results["css"].append(a_selector + h3_selector)
+    try:
+        for i in range(5):  # obtain the css selectors of the first 5 links
+            # in format: 'a[href="link"] h3.LC20lb.MBeuO.DKV0Md'
+            a_selector = 'a[href="' + results["href"][i] + '"]'
+            results["css"].append(a_selector + h3_selector)
+    except IndexError as e:
 
+        for i in range(len(results["href"])):
+            # in format: 'a[href="link"] h3.LC20lb.MBeuO.DKV0Md'
+            a_selector = 'a[href="' + results["href"][i] + '"]'
+            results["css"].append(a_selector + h3_selector)
     return results
+
+
+# scrolls and interacts with hrefs or buttons on a page
+def explore_page(self, log_file_path):
+    current_url = self.get_current_url()
+    self.sleep(3)
+    # find up to 10 visible links
+    links = self.find_visible_elements("a[href]", limit=10)
+    clicked_on = random.randint(0, len(links) - 1)  # to click on 1 of the links we found
+    # define css selector to click
+    css_to_click = 'a[href="' + links[clicked_on].get_attribute("href") + '"]'  # in format a[href="link"]
+    # write the visible links into a file
+    with open(log_file_path, "a", encoding="utf-8") as file:
+        file.write("searching " + self.get_current_url() + " for up to " + str(number_links_to_find) + " links:\n")
+        for link in links:
+            file.write(link.get_attribute("href") + "\n")
+        counter = 0
+        while self.get_current_url() == current_url and counter < len(links):
+            try:
+                file.write("Clicking on: " + css_to_click + "\n")
+                counter += 1
+                self.slow_click(css_to_click)
+            except Exception as e:  # if clicking on the URL fails (most likely that element isn't visible)
+                file.write("Exception: " + str(e) + "occurred while clicking" + css_to_click + "\n")
+                # increment to click on the next link
+                clicked_on += 1
+                css_to_click = 'a[href="' + links[clicked_on % len(links)].get_attribute("href") + '"]'
+
