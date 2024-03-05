@@ -1,7 +1,7 @@
 from seleniumbase import BaseCase
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime
-from tests.search_results import get_results, explore_page
+from tests.search_results import *
 import random
 
 
@@ -74,8 +74,9 @@ class GoogleSearchTest(BaseCase):
 
             # explore the link
             for i in range(0, link_explore_depth):
-                with open(self.log_file_path, "a", encoding="utf-8") as file:
-                    file.write("try " + str(i) + '\n')
+                # with open(self.log_file_path, "a", encoding="utf-8") as file:
+                #    file.write("try " + str(i) + '\n')
+                slow_scroll_down_up(self)
                 explore_page(self, self.log_file_path)
 
         # no results found error

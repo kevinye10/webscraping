@@ -61,3 +61,24 @@ def explore_page(self, log_file_path):
                 clicked_on += 1
                 css_to_click = 'a[href="' + links[clicked_on % len(links)].get_attribute("href") + '"]'
 
+
+def slow_scroll_down_up(self):
+    total_height = self.execute_script("return document.body.scrollHeight")
+
+    for i in range(0, total_height, 50):  # Scrolls/100 pixels
+        self.execute_script(f"window.scrollTo(0, {i})")
+        # simulate user behavior
+        if i % 2000 == 0:    # once every 2000 pixels wait extra long
+            self.sleep(1)
+        else:
+            self.sleep(random.random() / 16)     # waits short amount of time
+
+    self.sleep(random.random() * 2)  # wait for up to 2 seconds
+
+    for i in range(total_height, 0, -50):  # Adjust the step/increment value as needed
+        self.execute_script(f"window.scrollTo(0, {i})")
+        # simulate user behavior
+        if i % 2000 == 0:    # once every 2000 pixels wait extra long
+            self.sleep(1)
+        else:
+            self.sleep(random.random() / 16)     # waits short amount of time
