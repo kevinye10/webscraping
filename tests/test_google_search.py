@@ -20,8 +20,11 @@ class GoogleSearchTest(BaseCase):
     def test_google_search(self):
         now = datetime.now()
         date = now.strftime("%m/%d/%Y;%H:%M:%S")
-        search_query = "cnn"
-        link_explore_depth = 2
+        search_query = "cnn"            # what should we search for
+        main_page_scroll_percent = 1    # on the main google page, how often to through the links? (0.0-1.0)
+        link_explore_depth = 2          # how many links should we click through?
+        number_link_to_click = 100      # when exploring a page, which link index should we click?
+        scroll_percent = 1              # how far down should we scroll on a page (0.0-1.0)
 
         try:
             self.maximize_window()
@@ -37,7 +40,7 @@ class GoogleSearchTest(BaseCase):
 
             # obtain all links and css selectors to the links
             # returns a dictionary where {"href": links[], "css": css selectors[]}
-            results = get_results(self.get_page_source())
+            results = get_results(self.get_page_source(), self.log_file_path)
 
             # were there any results?
             if len(results["href"]) == 0:
@@ -50,18 +53,18 @@ class GoogleSearchTest(BaseCase):
                 file.write(search_query + ";" + date + "\n")
                 for link in links:
                     file.write(str(link) + "\n")
-                for css in results["css"]:
-                    file.write(css + "\n")
+                """for css in results["css"]:
+                    file.write(css + "\n")"""
                 file.write("\n")
 
             # write to log that search was successful
             with open(self.log_file_path, "a", encoding="utf-8") as file:
                 file.write(date + "\n" "Successfully found results for '" + search_query + "'\n")
 
-            # scroll to last link and back up (50% of the time)
-            if random.randint(0,1):
+            # scroll to last link and back up (x% of the time)
+            if random.random() < main_page_scroll_percent:
                 self.slow_scroll_to(results["css"][-1])
-                self.sleep(random.randint(1,200) / 100)  # wait between 0.00 and 2.00 seconds
+                self.sleep(random.random() * 2)  # wait between 0.00 and 2.00 seconds
                 # since there is no self.slow_scroll_to_top(), we are going to slow scroll back to the first link
                 self.slow_scroll_to(results["css"][0])
 
@@ -74,10 +77,8 @@ class GoogleSearchTest(BaseCase):
 
             # explore the link
             for i in range(0, link_explore_depth):
-                # with open(self.log_file_path, "a", encoding="utf-8") as file:
-                #    file.write("try " + str(i) + '\n')
-                slow_scroll_down_up(self)
-                explore_page(self, self.log_file_path)
+                slow_scroll_down_up(self, scroll_percent)
+                explore_page(self, self.log_file_path, number_link_to_click)
 
         # no results found error
         except ValueError:

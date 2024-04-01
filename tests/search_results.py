@@ -1,10 +1,8 @@
 from bs4 import BeautifulSoup
 import random
 
-number_links_to_find = 10   # for explore_page
 
-
-def get_results(page_source):
+def get_results(page_source, log_file_path):
     soup = BeautifulSoup(page_source, "html.parser")
     # returns an 'bs4.element.ResultSet' (iterable) of <a> tags
     search = soup.find_all("a", jsname="UWckNb", href=True)
@@ -27,20 +25,19 @@ def get_results(page_source):
             a_selector = 'a[href="' + results["href"][i] + '"]'
             results["css"].append(a_selector + h3_selector)
     except IndexError as e:
+        # not all 5 links exist
+        pass
 
-        for i in range(len(results["href"])):
-            # in format: 'a[href="link"] h3.LC20lb.MBeuO.DKV0Md'
-            a_selector = 'a[href="' + results["href"][i] + '"]'
-            results["css"].append(a_selector + h3_selector)
     return results
 
 
 # scrolls and interacts with hrefs or buttons on a page
-def explore_page(self, log_file_path):
+"""
+def explore_page(self, log_file_path, number_links_to_find):
     current_url = self.get_current_url()
     self.sleep(3)
     # find up to 10 visible links
-    links = self.find_visible_elements("a[href]", limit=10)
+    links = self.find_visible_elements("a[href]", limit=number_links_to_find)
     clicked_on = random.randint(0, len(links) - 1)  # to click on 1 of the links we found
     # define css selector to click
     css_to_click = 'a[href="' + links[clicked_on].get_attribute("href") + '"]'  # in format a[href="link"]
@@ -60,10 +57,32 @@ def explore_page(self, log_file_path):
                 # increment to click on the next link
                 clicked_on += 1
                 css_to_click = 'a[href="' + links[clicked_on % len(links)].get_attribute("href") + '"]'
+"""
 
 
-def slow_scroll_down_up(self):
-    total_height = self.execute_script("return document.body.scrollHeight")
+def explore_page(self, log_file_path, number_link_to_click):
+    current_url = self.get_current_url()
+    self.sleep(3)
+    if number_link_to_click < 0:
+        with open(log_file_path, "a", encoding="utf-8") as file:
+            file.write("negative link indices are not allowed")
+            return
+
+    # continuously try clicking on links - if one doesn't work move onto a next one
+    while self.get_current_url() == current_url and number_link_to_click > 0:
+        with open(log_file_path, "a", encoding="utf-8") as file:
+            file.write("Attempting to click on link " + str(number_link_to_click) + ": " + current_url + "\t...\t")
+            try:
+                self.click_nth_visible_element("a", number_link_to_click)
+                file.write("Success!\n")
+            except Exception as e:
+                file.write("Exception: " + str(e) + "occurred\n")
+                number_link_to_click += 1
+
+
+def slow_scroll_down_up(self, percent):
+    # scroll down percent% of the total page height
+    total_height = self.execute_script("return document.body.scrollHeight") * percent
 
     for i in range(0, total_height, 50):  # Scrolls/100 pixels
         self.execute_script(f"window.scrollTo(0, {i})")
